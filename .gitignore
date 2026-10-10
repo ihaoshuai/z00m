@@ -1,0 +1,6 @@
+**/.*/
+zig-*/
+.*
+*.zon
+
+!.gitignore
