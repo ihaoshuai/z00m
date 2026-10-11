@@ -2,6 +2,7 @@ const rl = @import("raylib");
 const builtin = @import("builtin");
 const std = @import("std");
 const Screenshot = @import("screenshot.zig").Screenshot;
+const single_instance = @import("single_instance.zig");
 
 var g_zoom_rate: f32 = 3.0;
 const ZOOM_INTERVAL: f32 = 0.5;
@@ -15,7 +16,26 @@ var g_is_running: bool = true;
 const VS_PATH = "shader/basic.vs";
 const FS_PATH = "shader/foucs.fs";
 
+fn handleSignal(sig: std.posix.SIG) callconv(.c) void {
+    _ = sig;
+    g_is_running = false;
+}
+
 pub fn main() anyerror!void {
+    if(!try single_instance.lock()){
+        return;
+    }
+    defer single_instance.unlock();
+
+    var act = std.posix.Sigaction{
+        .handler = .{ .handler = handleSignal },
+        .mask = std.posix.sigemptyset(),
+        .flags = 0,
+    };
+    std.posix.sigaction(std.posix.SIG.TERM, &act, null);
+    std.posix.sigaction(std.posix.SIG.INT, &act, null);
+
+
     const cur_frame = try Screenshot.getFrame();
     // std.debug.print("INFO: frame: {}x{}", .{ cur_frame.width, cur_frame.width });
 
